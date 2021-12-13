@@ -273,7 +273,8 @@ def compact(text, mark_headers=False):
                 for (i, v) in items:
                     page.append(v)
             headers.clear()
-            page.append(line)  # first line
+            if Extractor.keepNonSentence or "." in line:
+                page.append(line)  # first line
             emptySection = False
         elif not emptySection:
             page.append(line)
@@ -801,7 +802,15 @@ class Extractor():
 
     ##
     # Whether to preserve section titles
-    keepSections = True
+    keepSections = False
+
+    ##
+    # keep sections without sentences
+    keepNonSentence = False
+
+    ##
+    # add doc headers
+    addHeader = False
 
     ##
     # Whether to output text with HTML formatting elements in <doc> files.
@@ -868,14 +877,18 @@ class Extractor():
             out.write(out_str)
             out.write('\n')
         else:
-            header = '<doc id="%s" url="%s" title="%s">\n' % (self.id, self.url, self.title)
-            # Separate header from text with a newline.
-            header += self.title + '\n\n'
-            footer = "\n</doc>\n"
-            out.write(header)
-            out.write('\n'.join(text))
-            out.write('\n')
-            out.write(footer)
+            if Extractor.addHeader:
+                header = '<doc id="%s" url="%s" title="%s">\n' % (self.id, self.url, self.title)
+                # Separate header from text with a newline.
+                header += self.title + '\n\n'
+                footer = "\n</doc>\n"
+                out.write(header)
+            if text:
+                out.write('\n'.join(text))
+                out.write('\n')
+                out.write('\n')
+            if Extractor.addHeader:
+                out.write(footer)
 
         errs = (self.template_title_errs,
                 self.recursion_exceeded_1_errs,
