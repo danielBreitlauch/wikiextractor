@@ -213,6 +213,8 @@ def compact(text, mark_headers=False):
             if mark_headers:
                 title = "## " + title
 
+            page.append("\n")
+
             headers[lev] = title
             # drop previous headers
             headers = { k:v for k,v in headers.items() if k <= lev }
@@ -273,7 +275,7 @@ def compact(text, mark_headers=False):
                 for (i, v) in items:
                     page.append(v)
             headers.clear()
-            if Extractor.keepNonSentence or "." in line:
+            if Extractor.keepNonSentence or "." in line or "?" in line:
                 page.append(line)  # first line
             emptySection = False
         elif not emptySection:
@@ -441,6 +443,15 @@ def makeExternalImage(url, alt=''):
 # Also: [[Help:IPA for Catalan|[andora]]]
 
 
+def removeOccurence(text, delim):
+    pattern = re.compile('|'.join([re.escape(x) for x in delim]))
+    unbalancedStart = pattern.search(text)
+    if not unbalancedStart:
+        return text
+
+    return removeOccurence(text[:unbalancedStart.start()] + text[unbalancedStart.end():], delim)
+
+
 def replaceInternalLinks(text):
     """
     Replaces external links of the form:
@@ -476,9 +487,10 @@ def replaceInternalLinks(text):
                     pipe = last  # advance
                 curp = e1
             label = inner[pipe + 1:].strip()
-        res += text[cur:s] + makeInternalLink(title, label) + trail
+        label = replaceInternalLinks(label)
+        res += removeOccurence(text[cur:s], ["[[", "]]"]) + makeInternalLink(title, label) + trail
         cur = end
-    return res + text[cur:]
+    return res + removeOccurence(text[cur:], ["[[", "]]"])
 
 
 def makeInternalLink(title, label):
@@ -880,15 +892,13 @@ class Extractor():
             if Extractor.addHeader:
                 header = '<doc id="%s" url="%s" title="%s">\n' % (self.id, self.url, self.title)
                 # Separate header from text with a newline.
-                header += self.title + '\n\n'
-                footer = "\n</doc>\n"
-                out.write(header)
+                out.write(header + self.title + '\n\n')
             if text:
                 out.write('\n'.join(text))
                 out.write('\n')
                 out.write('\n')
             if Extractor.addHeader:
-                out.write(footer)
+                out.write("\n</doc>\n")
 
         errs = (self.template_title_errs,
                 self.recursion_exceeded_1_errs,
