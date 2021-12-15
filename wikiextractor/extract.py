@@ -1365,7 +1365,7 @@ def findMatchingBraces(text, ldelim=0):
                 cur = end
 
 
-def findBalanced(text, openDelim, closeDelim):
+def findBalanced(text, openDelim, closeDelim, ignorePositions=None):
     """
     Assuming that text contains a properly balanced expression using
     :param openDelim: as opening delimiters and
@@ -1376,35 +1376,38 @@ def findBalanced(text, openDelim, closeDelim):
     openPat = '|'.join([re.escape(x) for x in openDelim])
     # patter for delimiters expected after each opening delimiter
     afterPat = {o: re.compile(openPat + '|' + c, re.DOTALL) for o, c in zip(openDelim, closeDelim)}
+    startPat = re.compile(openPat)
+    stackPositions = []
     stack = []
     start = 0
-    cur = 0
     # end = len(text)
     startSet = False
-    startPat = re.compile(openPat)
-    nextPat = startPat
-    while True:
-        next = nextPat.search(text, cur)
-        if not next:
-            return
+    next = startPat.search(text)
+    while next:
         if not startSet:
+            if ignorePositions is not None and ignorePositions and next.start() == ignorePositions[0]:
+                ignorePositions.pop(0)
+                next = startPat.search(text, next.end())
+                continue
             start = next.start()
             startSet = True
         delim = next.group(0)
         if delim in openDelim:
+            stackPositions.append(next.start())
             stack.append(delim)
-            nextPat = afterPat[delim]
+            next = afterPat[delim].search(text, next.end())
         else:
-            opening = stack.pop()
-            # assert opening == openDelim[closeDelim.index(next.group(0))]
-            if stack:
-                nextPat = afterPat[stack[-1]]
+            stackPositions.pop()
+            stack.pop()
+            if stackPositions:
+                next = afterPat[stack[-1]].search(text, next.end())
             else:
                 yield start, next.end()
-                nextPat = startPat
-                start = next.end()
                 startSet = False
-        cur = next.end()
+                next = startPat.search(text, next.end())
+    if stackPositions:
+        for start, end in findBalanced(text, openDelim, closeDelim, stackPositions):
+            yield start, end
 
 # ----------------------------------------------------------------------
 # parser functions utilities
