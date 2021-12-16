@@ -275,7 +275,7 @@ def compact(text, mark_headers=False):
                 for (i, v) in items:
                     page.append(v)
             headers.clear()
-            if Extractor.keepNonSentence or "." in line or "?" in line:
+            if Extractor.keepNonSentenceInSection or "." in line or "?" in line:
                 page.append(line)  # first line
             emptySection = False
         elif not emptySection:
@@ -814,15 +814,15 @@ class Extractor():
 
     ##
     # Whether to preserve section titles
-    keepSections = False
+    keepSections = True
 
     ##
     # keep sections without sentences
-    keepNonSentence = False
+    keepNonSentenceInSection = True
 
     ##
     # add doc headers
-    addHeader = False
+    addDocHeader = True
 
     ##
     # Whether to output text with HTML formatting elements in <doc> files.
@@ -889,7 +889,7 @@ class Extractor():
             out.write(out_str)
             out.write('\n')
         else:
-            if Extractor.addHeader:
+            if Extractor.addDocHeader:
                 header = '<doc id="%s" url="%s" title="%s">\n' % (self.id, self.url, self.title)
                 # Separate header from text with a newline.
                 out.write(header + self.title + '\n\n')
@@ -897,7 +897,7 @@ class Extractor():
                 out.write('\n'.join(text))
                 out.write('\n')
                 out.write('\n')
-            if Extractor.addHeader:
+            if Extractor.addDocHeader:
                 out.write("\n</doc>\n")
 
         errs = (self.template_title_errs,

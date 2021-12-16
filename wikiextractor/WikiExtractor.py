@@ -539,6 +539,12 @@ def main():
                         help="produce HTML output, subsumes --links")
     groupP.add_argument("-l", "--links", action="store_true",
                         help="preserve links")
+
+    groupP.add_argument("--remove-non-sentence-from-section", action="store_false",
+                        help="removes section content that is not a sentence")
+    groupP.add_argument("--remove-doc-header", action="store_false",
+                        help="removes <doc></doc> headers and stores pure content")
+
     groupP.add_argument("-ns", "--namespaces", default="", metavar="ns1,ns2",
                         help="accepted namespaces")
     groupP.add_argument("--templates",
@@ -566,6 +572,8 @@ def main():
 
     Extractor.keepLinks = args.links
     Extractor.HtmlFormatting = args.html
+    Extractor.keepNonSentenceInSection = args.remove_non_sentence_from_section
+    Extractor.addDocHeader = args.remove_doc_header
     if args.html:
         Extractor.keepLinks = True
     Extractor.to_json = args.json
